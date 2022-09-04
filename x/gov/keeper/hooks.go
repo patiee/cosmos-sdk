@@ -2,43 +2,17 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
 // Implements GovHooks interface
-var _ types.GovHooks = Keeper{}
+type govHooks struct{}
 
-// AfterProposalSubmission - call hook if registered
-func (keeper Keeper) AfterProposalSubmission(ctx sdk.Context, proposalID uint64) {
-	if keeper.hooks != nil {
-		keeper.hooks.AfterProposalSubmission(ctx, proposalID)
-	}
-}
+func (govHooks) AfterProposalSubmission(sdk.Context, uint64) {}
 
-// AfterProposalDeposit - call hook if registered
-func (keeper Keeper) AfterProposalDeposit(ctx sdk.Context, proposalID uint64, depositorAddr sdk.AccAddress) {
-	if keeper.hooks != nil {
-		keeper.hooks.AfterProposalDeposit(ctx, proposalID, depositorAddr)
-	}
-}
+func (govHooks) AfterProposalDeposit(sdk.Context, uint64, sdk.AccAddress) {}
 
-// AfterProposalVote - call hook if registered
-func (keeper Keeper) AfterProposalVote(ctx sdk.Context, proposalID uint64, voterAddr sdk.AccAddress) {
-	if keeper.hooks != nil {
-		keeper.hooks.AfterProposalVote(ctx, proposalID, voterAddr)
-	}
-}
+func (govHooks) AfterProposalVote(sdk.Context, uint64, sdk.AccAddress) {}
 
-// AfterProposalFailedMinDeposit - call hook if registered
-func (keeper Keeper) AfterProposalFailedMinDeposit(ctx sdk.Context, proposalID uint64) {
-	if keeper.hooks != nil {
-		keeper.hooks.AfterProposalFailedMinDeposit(ctx, proposalID)
-	}
-}
+func (govHooks) AfterProposalFailedMinDeposit(sdk.Context, uint64) {}
 
-// AfterProposalVotingPeriodEnded - call hook if registered
-func (keeper Keeper) AfterProposalVotingPeriodEnded(ctx sdk.Context, proposalID uint64) {
-	if keeper.hooks != nil {
-		keeper.hooks.AfterProposalVotingPeriodEnded(ctx, proposalID)
-	}
-}
+func (govHooks) AfterProposalVotingPeriodEnded(sdk.Context, uint64) {}

@@ -2,88 +2,41 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 // Implements StakingHooks interface
-var _ types.StakingHooks = Keeper{}
+type stakingHooks struct{}
 
-// AfterValidatorCreated - call hook if registered
-func (k Keeper) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.AfterValidatorCreated(ctx, valAddr)
-	}
+func (stakingHooks) AfterValidatorCreated(sdk.Context, sdk.ValAddress) error { return nil }
+
+func (stakingHooks) BeforeValidatorModified(sdk.Context, sdk.ValAddress) error { return nil }
+
+func (stakingHooks) AfterValidatorRemoved(sdk.Context, sdk.ConsAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// BeforeValidatorModified - call hook if registered
-func (k Keeper) BeforeValidatorModified(ctx sdk.Context, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.BeforeValidatorModified(ctx, valAddr)
-	}
+func (stakingHooks) AfterValidatorBonded(sdk.Context, sdk.ConsAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// AfterValidatorRemoved - call hook if registered
-func (k Keeper) AfterValidatorRemoved(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.AfterValidatorRemoved(ctx, consAddr, valAddr)
-	}
+func (stakingHooks) AfterValidatorBeginUnbonding(sdk.Context, sdk.ConsAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// AfterValidatorBonded - call hook if registered
-func (k Keeper) AfterValidatorBonded(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.AfterValidatorBonded(ctx, consAddr, valAddr)
-	}
+func (stakingHooks) BeforeDelegationCreated(sdk.Context, sdk.AccAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// AfterValidatorBeginUnbonding - call hook if registered
-func (k Keeper) AfterValidatorBeginUnbonding(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.AfterValidatorBeginUnbonding(ctx, consAddr, valAddr)
-	}
+func (stakingHooks) BeforeDelegationSharesModified(sdk.Context, sdk.AccAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// BeforeDelegationCreated - call hook if registered
-func (k Keeper) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.BeforeDelegationCreated(ctx, delAddr, valAddr)
-	}
+func (stakingHooks) BeforeDelegationRemoved(sdk.Context, sdk.AccAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// BeforeDelegationSharesModified - call hook if registered
-func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
-	}
+func (stakingHooks) AfterDelegationModified(sdk.Context, sdk.AccAddress, sdk.ValAddress) error {
 	return nil
 }
 
-// BeforeDelegationRemoved - call hook if registered
-func (k Keeper) BeforeDelegationRemoved(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		k.hooks.BeforeDelegationRemoved(ctx, delAddr, valAddr)
-	}
-	return nil
-}
-
-// AfterDelegationModified - call hook if registered
-func (k Keeper) AfterDelegationModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	if k.hooks != nil {
-		return k.hooks.AfterDelegationModified(ctx, delAddr, valAddr)
-	}
-	return nil
-}
-
-// BeforeValidatorSlashed - call hook if registered
-func (k Keeper) BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.ValAddress, fraction sdk.Dec) error {
-	if k.hooks != nil {
-		return k.hooks.BeforeValidatorSlashed(ctx, valAddr, fraction)
-	}
-	return nil
-}
+func (stakingHooks) BeforeValidatorSlashed(sdk.Context, sdk.ValAddress, sdk.Dec) error { return nil }

@@ -56,7 +56,7 @@ func NewKeeper(
 		cdc:        cdc,
 		authKeeper: ak,
 		bankKeeper: bk,
-		hooks:      nil,
+		hooks:      stakingHooks{},
 		authority:  authority,
 	}
 }
@@ -66,9 +66,13 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/"+types.ModuleName)
 }
 
+func (k *Keeper) Hooks() types.StakingHooks {
+	return k.hooks
+}
+
 // SetHooks Set the validator hooks
 func (k *Keeper) SetHooks(sh types.StakingHooks) {
-	if k.hooks != nil {
+	if k.hooks != nil && k.hooks != (stakingHooks{}) {
 		panic("cannot set validator hooks twice")
 	}
 

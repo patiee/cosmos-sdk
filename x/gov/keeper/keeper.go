@@ -81,10 +81,11 @@ func NewKeeper(
 	}
 
 	return &Keeper{
-		storeKey:   key,
 		authKeeper: authKeeper,
 		bankKeeper: bankKeeper,
 		sk:         sk,
+		storeKey:   key,
+		hooks:      govHooks{},
 		cdc:        cdc,
 		router:     router,
 		config:     config,
@@ -92,9 +93,14 @@ func NewKeeper(
 	}
 }
 
+// Hooks returns the gov Keeper's hooks
+func (keeper Keeper) Hooks() types.GovHooks {
+	return keeper.hooks
+}
+
 // SetHooks sets the hooks for governance
 func (keeper *Keeper) SetHooks(gh types.GovHooks) *Keeper {
-	if keeper.hooks != nil {
+	if keeper.hooks != nil && keeper.hooks != (govHooks{}) {
 		panic("cannot set governance hooks twice")
 	}
 
