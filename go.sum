@@ -388,8 +388,8 @@ github.com/graphprotocol/extractor-cosmos v0.1.1 h1:y1S64E6ZCbQMa9E3BmIcRmhhFZnh
 github.com/graphprotocol/extractor-cosmos v0.1.1/go.mod h1:b2UD7Z31psHvJwEnp+C5+icoNfxpqAgZfjkNpIaIdyM=
 github.com/graphprotocol/proto-cosmos v0.1.4 h1:MldVywLjjUqhGVmia34P0/6NMXLFKSeivfMQV3mJVSs=
 github.com/graphprotocol/proto-cosmos v0.1.4/go.mod h1:aHQD/4SLV++6Y/s5KLcRGzLSNEdglaRRWjRwydkBWAA=
-github.com/graphprotocol/tendermint v0.34.24-fh-test h1:bAsJMpV38djoRbf3jNCJxvzWezmTdRqRXdEZKvm3wPw=
-github.com/graphprotocol/tendermint v0.34.24-fh-test/go.mod h1:bLwVVEluPz4IgspmUFjQLCrqvBW1xmokqDjcNs3Zolc=
+github.com/graphprotocol/tendermint v0.34.24-fh-v6 h1:ADz3+1l5hxnn8hYsufDSKMo25Yt3QG5yjLNvb8so3Go=
+github.com/graphprotocol/tendermint v0.34.24-fh-v6/go.mod h1:tbUqFPn0xS4sHSb49zfPXbfbc2DJiORoCWMdH4wuzpM=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.2.2/go.mod h1:EaizFBKfUKtMIF5iaDEhniwNedqGo9FuLFzppDr3uwI=
 github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 h1:+9834+KizmvFV7pXQGSXQTsaWhq2GjuNUt0aUU0YBYw=

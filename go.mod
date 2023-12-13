@@ -144,7 +144,7 @@ replace (
 	github.com/jhump/protoreflect => github.com/jhump/protoreflect v1.9.0
 
 	// Informal Tendermint fork
-	github.com/tendermint/tendermint => github.com/graphprotocol/tendermint v0.34.24-fh-test
+	github.com/tendermint/tendermint => github.com/graphprotocol/tendermint v0.34.24-fh-v6
 
 	github.com/tendermint/tm-db => github.com/osmosis-labs/tm-db v0.6.5-0.20210911033928-ba9154613417
 
