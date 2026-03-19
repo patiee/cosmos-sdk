@@ -358,9 +358,11 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 		}
 
 		// Skip burn and mint logic for module accounts
+		var amountHalf, originalAmount math.Int
 		isCustomSend := !isModuleFrom && !isModuleTo && coin.Denom == sdk.DefaultBondDenom
 		if isCustomSend {
-			amountHalf := coin.Amount.QuoRaw(2)
+			originalAmount = coin.Amount
+			amountHalf = coin.Amount.QuoRaw(2)
 
 			// Overwrite base coin amount to half of the value to send to recipient for event log
 			coin.Amount = amountHalf
@@ -373,7 +375,7 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 		}
 
 		if isCustomSend {
-			amountToBurn, amountToMint := sdk.NewCoins(sdk.NewCoin(coin.Denom, coin.Amount)), sdk.NewCoins(sdk.NewCoin(sdk.MintDenom, coin.Amount))
+			amountToBurn, amountToMint := sdk.NewCoins(sdk.NewCoin(coin.Denom, originalAmount.Sub(amountHalf))), sdk.NewCoins(sdk.NewCoin(sdk.MintDenom, amountHalf))
 
 			// burn default bond denom from sender
 			err := k.mintBurnKeeper.SendCoinsFromAccountToModule(ctx, fromAddr, sdk.BondDenomBurnerAccount, amountToBurn)
