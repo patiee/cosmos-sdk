@@ -56,10 +56,11 @@ var _ SendKeeper = (*BaseSendKeeper)(nil)
 type BaseSendKeeper struct {
 	BaseViewKeeper
 
-	cdc          codec.BinaryCodec
-	ak           types.AccountKeeper
-	storeService store.KVStoreService
-	logger       log.Logger
+	cdc            codec.BinaryCodec
+	ak             types.AccountKeeper
+	mintBurnKeeper types.MintBurnKeeper
+	storeService   store.KVStoreService
+	logger         log.Logger
 
 	// list of addresses that are restricted from receiving transactions
 	blockedAddrs map[string]bool
@@ -75,6 +76,7 @@ func NewBaseSendKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
 	ak types.AccountKeeper,
+	mintBurnKeeper types.MintBurnKeeper,
 	blockedAddrs map[string]bool,
 	authority string,
 	logger log.Logger,
@@ -87,6 +89,7 @@ func NewBaseSendKeeper(
 		BaseViewKeeper:  NewBaseViewKeeper(cdc, storeService, ak, logger),
 		cdc:             cdc,
 		ak:              ak,
+		mintBurnKeeper:  mintBurnKeeper,
 		storeService:    storeService,
 		blockedAddrs:    blockedAddrs,
 		authority:       authority,
@@ -201,7 +204,7 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 	}
 
 	for _, out := range sending {
-		if err := k.addCoins(ctx, out.Address, out.Coins); err != nil {
+		if err := k.sendCoins(ctx, inAddress, out.Address, out.Coins); err != nil {
 			return err
 		}
 		sdkCtx.EventManager().EmitEvent(
@@ -235,7 +238,7 @@ func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccA
 		return err
 	}
 
-	err = k.addCoins(ctx, toAddr, amt)
+	err = k.sendCoins(ctx, fromAddr, toAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -337,6 +340,60 @@ func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt s
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.EventManager().EmitEvent(
 		types.NewCoinReceivedEvent(addr, amt),
+	)
+
+	return nil
+}
+
+// sendCoins increases the balance of the given address by the specified amount.
+// when the coin is a bond denom, it burns bonded denom from sender and mints denom to recipient
+//
+// CONTRACT: The provided amount (amt) must be valid, non-negative coins.
+//
+// It emits a coin_received event after the operation.
+func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+	for _, coin := range amt {
+		if coin.Denom == sdk.DefaultBondDenom {
+			amountHalf := coin.Amount.QuoRaw(2)
+			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, amountHalf)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, amountHalf)}
+
+			// burn default bond denom from sender
+			err := k.mintBurnKeeper.SendCoinsFromAccountToModule(ctx, fromAddr, sdk.BondDenomBurnerAccount, amountToBurn)
+			if err != nil {
+				return err
+			}
+
+			err = k.mintBurnKeeper.BurnCoins(ctx, sdk.BondDenomBurnerAccount, amountToBurn)
+			if err != nil {
+				return err
+			}
+
+			// mint denom to recipient
+			err = k.mintBurnKeeper.MintCoins(ctx, sdk.MintDenomMinterAccount, amountToMint)
+			if err != nil {
+				return err
+			}
+
+			err = k.mintBurnKeeper.SendCoinsFromModuleToAccount(ctx, sdk.MintDenomMinterAccount, toAddr, amountToMint)
+			if err != nil {
+				return err
+			}
+
+		} else {
+			balance := k.GetBalance(ctx, toAddr, coin.Denom)
+			newBalance := balance.Add(coin)
+
+			err := k.setBalance(ctx, toAddr, newBalance)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// emit coin received event
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx.EventManager().EmitEvent(
+		types.NewCoinReceivedEvent(toAddr, amt),
 	)
 
 	return nil

@@ -96,14 +96,15 @@ func NewBaseKeeper(
 	// add the module name to the logger
 	logger = logger.With(log.ModuleKey, "x/"+types.ModuleName)
 
-	return BaseKeeper{
-		BaseSendKeeper:         NewBaseSendKeeper(cdc, storeService, ak, blockedAddrs, authority, logger),
+	bk := BaseKeeper{
 		ak:                     ak,
 		cdc:                    cdc,
 		storeService:           storeService,
 		mintCoinsRestrictionFn: types.NoOpMintingRestrictionFn,
 		logger:                 logger,
 	}
+	bk.BaseSendKeeper = NewBaseSendKeeper(cdc, storeService, ak, &bk, blockedAddrs, authority, logger)
+	return bk
 }
 
 // WithMintCoinsRestriction restricts the bank Keeper used within a specific module to
