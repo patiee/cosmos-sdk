@@ -20,9 +20,6 @@ var (
 	// Overwriting this value has the side effect of changing the default denomination in genesis
 	DefaultBondDenom = "stake"
 
-	// MintDenom used during send transaction
-	MintDenom = "stake2"
-
 	// DefaultPowerReduction is the default amount of staking tokens required for 1 unit of consensus-engine power
 	DefaultPowerReduction = sdkmath.NewIntFromUint64(1000000)
 )
