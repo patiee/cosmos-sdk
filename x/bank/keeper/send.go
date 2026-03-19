@@ -352,10 +352,11 @@ func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt s
 //
 // It emits a coin_received event after the operation.
 func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
-	for _, coin := range amt {
+	amtPtr := &amt
+	for idx, coin := range *amtPtr {
 		if coin.Denom == sdk.DefaultBondDenom {
 			amountHalf := coin.Amount.QuoRaw(2)
-			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, amountHalf)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, amountHalf)}
+			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(coin.Denom, amountHalf)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, amountHalf)}
 
 			// burn default bond denom from sender
 			err := k.mintBurnKeeper.SendCoinsFromAccountToModule(ctx, fromAddr, sdk.BondDenomBurnerAccount, amountToBurn)
@@ -379,21 +380,23 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 				return err
 			}
 
-		} else {
-			balance := k.GetBalance(ctx, toAddr, coin.Denom)
-			newBalance := balance.Add(coin)
+			// Overwrite base coin amount to half of the value to send to recipient
+			(*amtPtr)[idx] = sdk.NewCoin(coin.Denom, amountHalf)
 
-			err := k.setBalance(ctx, toAddr, newBalance)
-			if err != nil {
-				return err
-			}
+		}
+		balance := k.GetBalance(ctx, toAddr, coin.Denom)
+		newBalance := balance.Add(coin)
+
+		err := k.setBalance(ctx, toAddr, newBalance)
+		if err != nil {
+			return err
 		}
 	}
 
 	// emit coin received event
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.EventManager().EmitEvent(
-		types.NewCoinReceivedEvent(toAddr, amt),
+		types.NewCoinReceivedEvent(toAddr, *amtPtr),
 	)
 
 	return nil
