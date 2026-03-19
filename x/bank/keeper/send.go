@@ -354,7 +354,20 @@ func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt s
 func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 	amtPtr := &amt
 	for idx, coin := range *amtPtr {
-		if coin.Denom == sdk.DefaultBondDenom {
+		accFrom := k.ak.GetAccount(ctx, fromAddr)
+		var isModuleFrom bool
+		if accFrom != nil {
+			_, isModuleFrom = accFrom.(sdk.ModuleAccountI)
+		}
+
+		accTo := k.ak.GetAccount(ctx, toAddr)
+		var isModuleTo bool
+		if accTo != nil {
+			_, isModuleTo = accTo.(sdk.ModuleAccountI)
+		}
+
+		// Skip burn and mint logic for module accounts
+		if !isModuleFrom && !isModuleTo && coin.Denom == sdk.DefaultBondDenom {
 			amountHalf := coin.Amount.QuoRaw(2)
 			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(coin.Denom, amountHalf)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, amountHalf)}
 
