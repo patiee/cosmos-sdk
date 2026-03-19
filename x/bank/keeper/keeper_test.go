@@ -140,6 +140,14 @@ func (suite *KeeperTestSuite) SetupTest() {
 	ctrl := gomock.NewController(suite.T())
 	authKeeper := banktestutil.NewMockAccountKeeper(ctrl)
 	authKeeper.EXPECT().AddressCodec().Return(address.NewBech32Codec("cosmos")).AnyTimes()
+
+	// Intelligent Catch-all GetAccount to absorb custom tokenomics audits with correct type resolution
+	modules := []string{"stake_burner", "stake2_minter"}
+	moduleAddrs := make(map[string]bool)
+	for _, m := range modules {
+		moduleAddrs[authtypes.NewModuleAddress(m).String()] = true
+	}
+
 	suite.ctx = ctx
 	suite.authKeeper = authKeeper
 	suite.bankKeeper = keeper.NewBaseKeeper(
