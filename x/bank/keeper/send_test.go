@@ -10,13 +10,18 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func (suite *KeeperTestSuite) prepareMocksForSendMsg(fromAddr, toAddr sdk.AccAddress) {
+func (suite *KeeperTestSuite) getAccountsAndPrepareMocksForSendMsg() (fromAddr, toAddr sdk.AccAddress) {
+	fromAddr = sdk.AccAddress([]byte("sender"))
+	toAddr = sdk.AccAddress([]byte("recipient"))
+
 	// Mocks for fund account
 	suite.authKeeper.EXPECT().GetModuleAccount(gomock.Any(), "stake_burner").Return(burnerAcc).AnyTimes()
 	suite.authKeeper.EXPECT().GetModuleAccount(gomock.Any(), "stake2_minter").Return(minterAcc).AnyTimes()
+	suite.authKeeper.EXPECT().GetModuleAccount(gomock.Any(), "mint").Return(mintAcc).AnyTimes()
 
 	suite.authKeeper.EXPECT().GetModuleAddress("stake_burner").Return(burnerAcc.GetAddress()).AnyTimes()
 	suite.authKeeper.EXPECT().GetModuleAddress("stake2_minter").Return(minterAcc.GetAddress()).AnyTimes()
+	suite.authKeeper.EXPECT().GetModuleAddress("mint").Return(mintAcc.GetAddress()).AnyTimes()
 
 	// Mocks for send msg
 	suite.authKeeper.EXPECT().GetAccount(suite.ctx, gomock.Any()).DoAndReturn(
@@ -29,6 +34,9 @@ func (suite *KeeperTestSuite) prepareMocksForSendMsg(fromAddr, toAddr sdk.AccAdd
 			}
 			if addr.String() == minterAcc.GetAddress().String() {
 				return minterAcc
+			}
+			if addr.String() == mintAcc.GetAddress().String() {
+				return mintAcc
 			}
 			return nil
 		}).AnyTimes()
@@ -47,29 +55,31 @@ func (suite *KeeperTestSuite) prepareMocksForSendMsg(fromAddr, toAddr sdk.AccAdd
 		}).AnyTimes()
 
 	suite.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
+
+	return
 }
 
 func (suite *KeeperTestSuite) TestCustomSendCoinsNativeDenom() {
-	fromAddr := sdk.AccAddress([]byte("sender"))
-	toAddr := sdk.AccAddress([]byte("recipient"))
+	fromAddr, toAddr := suite.getAccountsAndPrepareMocksForSendMsg()
 
-	suite.prepareMocksForSendMsg(fromAddr, toAddr)
-
+	// Fund sender account with 'stake'
 	initAmt := math.NewInt(1000)
 	initCoins := sdk.NewCoins(sdk.NewCoin("stake", initAmt))
-
-	suite.mockFundAccount(fromAddr)
 
 	err := banktestutil.FundAccount(suite.ctx, suite.bankKeeper, fromAddr, initCoins)
 	suite.Require().NoError(err)
 
+	balFrom := suite.bankKeeper.GetBalance(suite.ctx, fromAddr, "stake")
+	suite.Require().Equal("1000", balFrom.Amount.String(), "Sender stake balance incorrect before send")
+
 	sendAmt := math.NewInt(500)
 	coinsToSend := sdk.NewCoins(sdk.NewCoin("stake", sendAmt))
 
+	// Send '500stake' to recipient
 	err = suite.bankKeeper.SendCoins(suite.ctx, fromAddr, toAddr, coinsToSend)
 	suite.Require().NoError(err)
 
-	balFrom := suite.bankKeeper.GetBalance(suite.ctx, fromAddr, "stake")
+	balFrom = suite.bankKeeper.GetBalance(suite.ctx, fromAddr, "stake")
 	suite.Require().Equal("500", balFrom.Amount.String(), "Sender stake balance incorrect")
 	balToStake := suite.bankKeeper.GetBalance(suite.ctx, toAddr, "stake")
 	suite.Require().Equal("250", balToStake.Amount.String(), "Recipient stake balance incorrect")
