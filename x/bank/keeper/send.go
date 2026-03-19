@@ -394,7 +394,8 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 			}
 
 			// Overwrite base coin amount to half of the value to send to recipient
-			(*amtPtr)[idx] = sdk.NewCoin(coin.Denom, amountHalf)
+			coin.Amount = amountHalf
+			(*amtPtr)[idx] = coin
 
 		}
 		balance := k.GetBalance(ctx, toAddr, coin.Denom)
