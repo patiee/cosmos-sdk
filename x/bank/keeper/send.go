@@ -199,10 +199,6 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 		}
 	}
 
-	if err := k.subUnlockedCoins(ctx, inAddress, input.Coins); err != nil {
-		return err
-	}
-
 	for _, out := range sending {
 		if err := k.sendCoins(ctx, inAddress, out.Address, out.Coins); err != nil {
 			return err
@@ -229,11 +225,6 @@ func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccA
 
 	var err error
 	toAddr, err = k.sendRestriction.apply(ctx, fromAddr, toAddr, amt)
-	if err != nil {
-		return err
-	}
-
-	err = k.subUnlockedCoins(ctx, fromAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -367,9 +358,22 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 		}
 
 		// Skip burn and mint logic for module accounts
-		if !isModuleFrom && !isModuleTo && coin.Denom == sdk.DefaultBondDenom {
+		isCustomSend := !isModuleFrom && !isModuleTo && coin.Denom == sdk.DefaultBondDenom
+		if isCustomSend {
 			amountHalf := coin.Amount.QuoRaw(2)
-			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(coin.Denom, amountHalf)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, amountHalf)}
+
+			// Overwrite base coin amount to half of the value to send to recipient
+			coin.Amount = amountHalf
+			(*amtPtr)[idx] = coin
+		}
+
+		// Reduce sender balance
+		if err := k.subUnlockedCoins(ctx, fromAddr, sdk.Coins{coin}); err != nil {
+			return err
+		}
+
+		if isCustomSend {
+			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(coin.Denom, coin.Amount)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, coin.Amount)}
 
 			// burn default bond denom from sender
 			err := k.mintBurnKeeper.SendCoinsFromAccountToModule(ctx, fromAddr, sdk.BondDenomBurnerAccount, amountToBurn)
@@ -392,12 +396,8 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 			if err != nil {
 				return err
 			}
-
-			// Overwrite base coin amount to half of the value to send to recipient
-			coin.Amount = amountHalf
-			(*amtPtr)[idx] = coin
-
 		}
+
 		balance := k.GetBalance(ctx, toAddr, coin.Denom)
 		newBalance := balance.Add(coin)
 
