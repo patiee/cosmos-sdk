@@ -345,14 +345,6 @@ func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt s
 func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 	amtPtr := &amt
 	for idx, coin := range *amtPtr {
-		balance := k.GetBalance(ctx, toAddr, coin.Denom)
-		newBalance := balance.Add(coin)
-
-		err := k.setBalance(ctx, toAddr, newBalance)
-		if err != nil {
-			return err
-		}
-
 		accFrom := k.ak.GetAccount(ctx, fromAddr)
 		var isModuleFrom bool
 		if accFrom != nil {
@@ -404,6 +396,14 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 			if err != nil {
 				return err
 			}
+		}
+
+		balance := k.GetBalance(ctx, toAddr, coin.Denom)
+		newBalance := balance.Add(coin)
+
+		err := k.setBalance(ctx, toAddr, newBalance)
+		if err != nil {
+			return err
 		}
 	}
 
