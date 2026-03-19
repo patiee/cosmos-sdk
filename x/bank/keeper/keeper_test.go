@@ -197,7 +197,8 @@ func (suite *KeeperTestSuite) mockSendCoinsFromAccountToModule(acc *authtypes.Ba
 }
 
 func (suite *KeeperTestSuite) mockSendCoins(ctx context.Context, sender sdk.AccountI, receiver sdk.AccAddress) {
-	suite.authKeeper.EXPECT().GetAccount(ctx, sender.GetAddress()).Return(sender)
+	suite.authKeeper.EXPECT().GetAccount(ctx, sender.GetAddress()).Return(sender).Times(2)
+	suite.authKeeper.EXPECT().GetAccount(ctx, receiver).Return(nil)
 	suite.authKeeper.EXPECT().HasAccount(ctx, receiver).Return(true)
 }
 
@@ -208,10 +209,11 @@ func (suite *KeeperTestSuite) mockFundAccount(receiver sdk.AccAddress) {
 
 func (suite *KeeperTestSuite) mockInputOutputCoins(inputs []sdk.AccountI, outputs []sdk.AccAddress) {
 	for _, input := range inputs {
-		suite.authKeeper.EXPECT().GetAccount(suite.ctx, input.GetAddress()).Return(input)
+		suite.authKeeper.EXPECT().GetAccount(suite.ctx, input.GetAddress()).Return(input).AnyTimes()
 	}
 	for _, output := range outputs {
-		suite.authKeeper.EXPECT().HasAccount(suite.ctx, output).Return(true)
+		suite.authKeeper.EXPECT().GetAccount(suite.ctx, output).Return(nil).AnyTimes()
+		suite.authKeeper.EXPECT().HasAccount(suite.ctx, output).Return(true).AnyTimes()
 	}
 }
 
