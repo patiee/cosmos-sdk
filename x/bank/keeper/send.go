@@ -200,6 +200,9 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 	}
 
 	for _, out := range sending {
+		if err := k.subUnlockedCoins(ctx, inAddress, out.Coins); err != nil {
+			return err
+		}
 		if err := k.sendCoins(ctx, inAddress, out.Address, out.Coins); err != nil {
 			return err
 		}
@@ -226,6 +229,10 @@ func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccA
 	var err error
 	toAddr, err = k.sendRestriction.apply(ctx, fromAddr, toAddr, amt)
 	if err != nil {
+		return err
+	}
+
+	if err := k.subUnlockedCoins(ctx, fromAddr, amt); err != nil {
 		return err
 	}
 
@@ -337,7 +344,7 @@ func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt s
 }
 
 // sendCoins increases the balance of the given address by the specified amount.
-// when the coin is a bond denom, it burns bonded denom from sender and mints denom to recipient
+// when the coin is a bond denom, it burns half of the bonded denom from recipient and mints the stake2 denom to recipient from the other half
 //
 // CONTRACT: The provided amount (amt) must be valid, non-negative coins.
 //
@@ -345,6 +352,14 @@ func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt s
 func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 	amtPtr := &amt
 	for idx, coin := range *amtPtr {
+		balance := k.GetBalance(ctx, toAddr, coin.Denom)
+		newBalance := balance.Add(coin)
+
+		err := k.setBalance(ctx, toAddr, newBalance)
+		if err != nil {
+			return err
+		}
+
 		accFrom := k.ak.GetAccount(ctx, fromAddr)
 		var isModuleFrom bool
 		if accFrom != nil {
@@ -361,22 +376,14 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 		isCustomSend := !isModuleFrom && !isModuleTo && coin.Denom == sdk.DefaultBondDenom
 		if isCustomSend {
 			amountHalf := coin.Amount.QuoRaw(2)
+			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(coin.Denom, amountHalf)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, amountHalf)}
 
-			// Overwrite base coin amount to half of the value to send to recipient
+			// Overwrite base coin amount to half of the value to send to recipient for event log
 			coin.Amount = amountHalf
 			(*amtPtr)[idx] = coin
-		}
 
-		// Reduce sender balance
-		if err := k.subUnlockedCoins(ctx, fromAddr, sdk.Coins{coin}); err != nil {
-			return err
-		}
-
-		if isCustomSend {
-			amountToBurn, amountToMint := sdk.Coins{sdk.NewCoin(coin.Denom, coin.Amount)}, sdk.Coins{sdk.NewCoin(sdk.MintDenom, coin.Amount)}
-
-			// burn default bond denom from sender
-			err := k.mintBurnKeeper.SendCoinsFromAccountToModule(ctx, fromAddr, sdk.BondDenomBurnerAccount, amountToBurn)
+			// burn default bond denom from recipient
+			err := k.mintBurnKeeper.SendCoinsFromAccountToModule(ctx, toAddr, sdk.BondDenomBurnerAccount, amountToBurn)
 			if err != nil {
 				return err
 			}
@@ -396,14 +403,6 @@ func (k BaseSendKeeper) sendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 			if err != nil {
 				return err
 			}
-		}
-
-		balance := k.GetBalance(ctx, toAddr, coin.Denom)
-		newBalance := balance.Add(coin)
-
-		err := k.setBalance(ctx, toAddr, newBalance)
-		if err != nil {
-			return err
 		}
 	}
 
