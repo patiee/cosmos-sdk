@@ -161,6 +161,8 @@ func AuthModule() ModuleOption {
 					{Account: "nft"},
 					{Account: protocolpooltypes.ModuleName},
 					{Account: protocolpooltypes.ProtocolPoolEscrowAccount},
+					{Account: "stake_burner", Permissions: []string{"burner"}},
+					{Account: "stake2_minter", Permissions: []string{"minter"}},
 				},
 			}),
 		}

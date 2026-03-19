@@ -124,7 +124,9 @@ var (
 		govtypes.ModuleName:                         {authtypes.Burner},
 		nft.ModuleName:                              nil,
 		protocolpooltypes.ModuleName:                nil,
-		protocolpooltypes.ProtocolPoolEscrowAccount: nil}
+		protocolpooltypes.ProtocolPoolEscrowAccount: nil},
+		sdk.BondDenomBurnerAccount:                  {authtypes.Burner},
+		sdk.MintDenomMinterAccount:                  {authtypes.Minter},
 )
 
 var (
